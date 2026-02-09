@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=SF+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'IBM Plex Mono', Menlo, Consolas, monospace;
+}
+
+/* Monochrome Theme - Even Grayer */
+[data-theme="monochrome"] {
+  --bg: #080808;
+  --bg-secondary: #111111;
+  --bg-tertiary: #181818;
+  --text: #b0b0b0;
+  --text-muted: #606060;
+  --text-dim: #404040;
+  --primary: #808080;
+  --border: #222222;
+  --border-subtle: #151515;
+  --cursor: #808080;
+  --selection: rgba(128, 128, 128, 0.1);
+  /* PR Status Colors */
+  --pr-open: #3fb950;
+  --pr-merged: #a371f7;
+  --pr-closed: #f85149;
+}
+
+[data-theme="monochrome"] body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+[data-theme="monochrome"] ::selection {
+  background: var(--selection);
+  color: var(--text);
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Terminal container */
+.terminal-container {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
+/* Terminal input */
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-prompt {
+  color: var(--primary);
+  user-select: none;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  caret-color: var(--cursor);
+}
+
+.terminal-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Buttons */
+.terminal-button-primary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.terminal-button-primary:hover {
+  border-color: var(--text-muted);
+  background: var(--bg-secondary);
+}
+
+.terminal-button-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.terminal-button-secondary:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Dropdown scrollbar - thinner */
+[style*="max-height: 300px"]::-webkit-scrollbar {
+  width: 4px;
+}
+
+[style*="max-height: 300px"]::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+[style*="max-height: 300px"]::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+}
+
+[style*="max-height: 300px"]::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Links */
+a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Focus states */
+*:focus {
+  outline: 1px solid var(--text-dim);
+  outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--text-muted);
+}
