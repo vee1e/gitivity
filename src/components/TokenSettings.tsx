@@ -61,7 +61,7 @@ export function TokenSettings({
       style={{ background: 'rgba(0,0,0,0.85)' }}
     >
       <div 
-        className="max-w-md w-full"
+        className="max-w-md w-full rounded-lg overflow-hidden"
         style={{ 
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border)',
@@ -101,7 +101,7 @@ export function TokenSettings({
               from 60 to 5,000 requests per hour.
             </p>
             <div 
-              className="p-3 text-xs mb-4"
+              className="p-3 text-xs mb-4 rounded-r"
               style={{ 
                 background: 'var(--bg-tertiary)',
                 borderLeft: '2px solid var(--text-muted)',
@@ -146,7 +146,7 @@ export function TokenSettings({
                     setError("");
                   }}
                   placeholder="ghp_xxxxxxxxxxxxxxxx"
-                  className="terminal-input"
+                  className="terminal-input rounded-md"
                 />
                 {hasExistingToken && (
                   <Shield className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />

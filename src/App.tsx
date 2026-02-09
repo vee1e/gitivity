@@ -7,7 +7,6 @@ import {
   Loader2,
   Users,
   RefreshCw,
-  ArrowRight,
   ChevronDown,
   ChevronUp,
   KeyRound,
@@ -40,6 +39,7 @@ function AppContent() {
   const [selectedUser, setSelectedUser] = useState<UserStats | null>(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const [showPRs, setShowPRs] = useState(false);
+  const [prFilter, setPrFilter] = useState<'all' | 'open' | 'merged' | 'closed'>('all');
   const [loadingProgress, setLoadingProgress] = useState("");
   const [showTokenSettings, setShowTokenSettings] = useState(false);
   const [hasToken, setHasToken] = useState(false);
@@ -59,6 +59,19 @@ function AppContent() {
   const [suggestionsOrg, setSuggestionsOrg] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Org avatar loading state
+  const [orgAvatarLoaded, setOrgAvatarLoaded] = useState(false);
+  const [currentOrg, setCurrentOrg] = useState<string>("");
+
+  // Track org changes from repoUrl
+  useEffect(() => {
+    const org = repoUrl.includes('/') ? repoUrl.split('/')[0] : '';
+    if (org !== currentOrg) {
+      setCurrentOrg(org);
+      setOrgAvatarLoaded(false);
+    }
+  }, [repoUrl, currentOrg]);
 
   useEffect(() => {
     registerLoadingHandler(setLoadingProgress);
@@ -156,12 +169,30 @@ function AppContent() {
   // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     const currentSuggestions = searchMode === 'repo' ? suggestions : memberSuggestions.map(m => m.login);
+
+    // Shift+Tab toggles mode when not showing suggestions
+    if (e.key === 'Tab' && !showSuggestions) {
+      e.preventDefault();
+      setSearchMode(prev => prev === 'repo' ? 'member' : 'repo');
+      setRepoUrl('');
+      setOrgAvatarLoaded(false);
+      setCurrentOrg('');
+      return;
+    }
+
     if (!showSuggestions || currentSuggestions.length === 0) return;
 
     switch (e.key) {
       case 'Tab':
         e.preventDefault();
-        if (e.shiftKey) {
+        // If only one result, Tab acts as Enter
+        if (currentSuggestions.length === 1) {
+          const match = repoUrl.match(/^([a-zA-Z0-9_-]+)\/(.*)$/);
+          if (match) {
+            setRepoUrl(`${match[1]}/${currentSuggestions[0]}`);
+            setShowSuggestions(false);
+          }
+        } else if (e.shiftKey) {
           // Shift+Tab: move up
           const newIndex = selectedIndex === 0 ? currentSuggestions.length - 1 : selectedIndex - 1;
           setSelectedIndex(newIndex);
@@ -203,7 +234,7 @@ function AppContent() {
         setShowSuggestions(false);
         break;
     }
-  }, [showSuggestions, suggestions, memberSuggestions, selectedIndex, repoUrl, scrollSelectedIntoView, searchMode]);
+  }, [showSuggestions, suggestions, memberSuggestions, selectedIndex, repoUrl, scrollSelectedIntoView, searchMode, orgAvatarLoaded, currentOrg]);
 
   // Handle suggestion click
   const handleSuggestionClick = (value: string) => {
@@ -351,11 +382,11 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen terminal-container">
+    <div className="min-h-screen terminal-container flex flex-col">
       {/* Token Notification */}
       {showTokenNotification && (
         <div className="fixed bottom-4 right-4 max-w-md z-50 animate-fade-in">
-          <div className="p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 <AlertCircle className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
@@ -389,9 +420,9 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <span className="font-bold text-lg" style={{ color: 'var(--text)' }}>Gitivity</span>
-            <span className="text-xs px-2 py-0.5" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>v1.0.0</span>
+            <span className="text-xs px-2 py-0.5 rounded" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>v1.0.0</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowTokenSettings(true)}
@@ -425,30 +456,31 @@ function AppContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex-1 w-full">
         {/* Input Form */}
-        <div className="p-4 mb-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+        <div className="p-4 mb-6 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6 relative">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs" style={{ color: 'var(--text-dim)' }}>
-                    {searchMode === 'repo' ? 'REPOSITORY' : 'ORGANIZATION MEMBER'}
-                  </label>
-                  {/* Mode Toggle */}
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                  {/* Mode Toggle - on left */}
+                  <div className="flex items-center gap-0.5">
                     <button
                       type="button"
                       onClick={() => {
                         setSearchMode('repo');
                         setRepoUrl('');
                         setShowSuggestions(false);
+                        setOrgAvatarLoaded(false);
+                        setCurrentOrg('');
                       }}
-                      className="text-[10px] px-2 py-0.5 transition-all"
+                      className="text-[10px] px-2 py-0.5 rounded-l transition-all"
                       style={{
-                        background: searchMode === 'repo' ? 'var(--bg-tertiary)' : 'transparent',
-                        border: '1px solid var(--border-subtle)',
-                        color: searchMode === 'repo' ? 'var(--text)' : 'var(--text-dim)',
+                        background: searchMode === 'repo' ? 'var(--primary)' : 'var(--bg-tertiary)',
+                        border: '1px solid var(--border)',
+                        borderRight: 'none',
+                        color: searchMode === 'repo' ? 'var(--bg)' : 'var(--text-dim)',
+                        fontWeight: searchMode === 'repo' ? 500 : 400,
                       }}
                     >
                       Repo
@@ -459,20 +491,44 @@ function AppContent() {
                         setSearchMode('member');
                         setRepoUrl('');
                         setShowSuggestions(false);
+                        setOrgAvatarLoaded(false);
+                        setCurrentOrg('');
                       }}
-                      className="text-[10px] px-2 py-0.5 transition-all"
+                      className="text-[10px] px-2 py-0.5 rounded-r transition-all"
                       style={{
-                        background: searchMode === 'member' ? 'var(--bg-tertiary)' : 'transparent',
-                        border: '1px solid var(--border-subtle)',
-                        color: searchMode === 'member' ? 'var(--text)' : 'var(--text-dim)',
+                        background: searchMode === 'member' ? 'var(--primary)' : 'var(--bg-tertiary)',
+                        border: '1px solid var(--border)',
+                        color: searchMode === 'member' ? 'var(--bg)' : 'var(--text-dim)',
+                        fontWeight: searchMode === 'member' ? 500 : 400,
                       }}
                     >
                       Member
                     </button>
                   </div>
+                  <label className="text-xs" style={{ color: 'var(--text-dim)' }}>
+                    {searchMode === 'repo' ? 'REPOSITORY' : 'ORGANIZATION MEMBER'}
+                  </label>
                 </div>
                 <div className="terminal-input-line">
                   <span className="terminal-prompt">$</span>
+                  <div
+                    className="overflow-hidden transition-all duration-200 ease-out flex items-center"
+                    style={{
+                      width: currentOrg && orgAvatarLoaded ? '28px' : '0px',
+                      opacity: currentOrg && orgAvatarLoaded ? 1 : 0,
+                    }}
+                  >
+                    {currentOrg && (
+                      <img
+                        src={`https://github.com/${currentOrg}.png?size=48`}
+                        alt=""
+                        className="w-6 h-6 rounded flex-shrink-0"
+                        style={{ border: '1px solid var(--border-subtle)' }}
+                        onLoad={() => setOrgAvatarLoaded(true)}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
                   <input
                     ref={inputRef}
                     type="text"
@@ -480,7 +536,7 @@ function AppContent() {
                     onChange={(e) => setRepoUrl(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={searchMode === 'repo' ? "org/repo (e.g., facebook/react)" : "org/username (e.g., facebook/zuck)"}
-                    className="terminal-input"
+                    className="terminal-input rounded-md"
                     required
                     autoComplete="off"
                   />
@@ -490,7 +546,7 @@ function AppContent() {
                 {showSuggestions && (
                   <div
                     ref={suggestionsRef}
-                    className="absolute left-0 right-0 mt-1 z-50"
+                    className="absolute left-0 right-0 mt-1 z-50 rounded-md overflow-hidden"
                     style={{
                       background: 'var(--bg-tertiary)',
                       border: '1px solid var(--border)',
@@ -529,7 +585,7 @@ function AppContent() {
                                 key={repo}
                                 type="button"
                                 onClick={() => handleSuggestionClick(repo)}
-                                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-md"
                                 style={{
                                   background: index === selectedIndex ? 'var(--bg-secondary)' : 'transparent',
                                   color: index === selectedIndex ? 'var(--text)' : 'var(--text-muted)',
@@ -548,7 +604,7 @@ function AppContent() {
                                 key={member.login}
                                 type="button"
                                 onClick={() => handleSuggestionClick(member.login)}
-                                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 rounded-md"
                                 style={{
                                   background: index === selectedIndex ? 'var(--bg-secondary)' : 'transparent',
                                   color: index === selectedIndex ? 'var(--text)' : 'var(--text-muted)',
@@ -588,7 +644,7 @@ function AppContent() {
                   </div>
                 )}
               </div>
-              
+
               <div className="md:col-span-3">
                 <label className="block text-xs mb-1.5" style={{ color: 'var(--text-dim)' }}>
                   TIME PERIOD
@@ -597,7 +653,7 @@ function AppContent() {
                   <select
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(e.target.value as TimeFilter)}
-                    className="w-full terminal-input"
+                    className="w-full terminal-input rounded-md"
                     style={{ appearance: 'none', paddingRight: '32px' }}
                   >
                     <option value="2w">2 Weeks</option>
@@ -609,7 +665,7 @@ function AppContent() {
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
                 </div>
               </div>
-              
+
               <div className="md:col-span-3 flex items-end">
                 <button
                   type="submit"
@@ -622,10 +678,7 @@ function AppContent() {
                       <span>Processing...</span>
                     </>
                   ) : (
-                    <>
-                      <span>Analyze</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
+                    <span>Analyze</span>
                   )}
                 </button>
               </div>
@@ -647,7 +700,7 @@ function AppContent() {
 
         {/* Error Message */}
         {error && (
-          <div className="p-4 mb-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--text-dim)' }}>
+          <div className="p-4 mb-6 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--text-dim)' }}>
             <div className="flex items-center gap-3">
               <X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
               <div>
@@ -660,7 +713,7 @@ function AppContent() {
 
         {/* Loading State */}
         {loading && !stats && (
-          <div className="p-4 mb-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+          <div className="p-4 mb-6 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
@@ -674,7 +727,7 @@ function AppContent() {
         {/* User Loading Modal */}
         {loadingUser && (
           <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.8)' }}>
-            <div className="p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+            <div className="p-6 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-3">
                 <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--text-muted)' }} />
                 <p style={{ color: 'var(--text)' }}>Loading user statistics...</p>
@@ -692,12 +745,12 @@ function AppContent() {
         {stats && (
           <div className="space-y-6">
             {/* Contributors Section */}
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+            <div className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
               <div className="p-3 flex items-center gap-3" style={{ background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-subtle)' }}>
                 <Users className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Contributors</span>
                 <div className="flex-1" />
-                <span className="text-xs px-2 py-0.5" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>{stats.contributors.length} total</span>
+                <span className="text-xs px-2 py-0.5 rounded" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>{stats.contributors.length} total</span>
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -705,8 +758,8 @@ function AppContent() {
                     <button
                       key={contributor.username}
                       onClick={() => handleUserClick(contributor.username)}
-                      className="text-left p-3"
-                      style={{ 
+                      className="text-left p-3 rounded-md"
+                      style={{
                         background: 'var(--bg-tertiary)',
                         border: '1px solid var(--border-subtle)',
                       }}
@@ -715,7 +768,7 @@ function AppContent() {
                         <img
                           src={contributor.avatarUrl}
                           alt={contributor.username}
-                          className="w-10 h-10"
+                          className="w-10 h-10 rounded-lg"
                           style={{ border: '1px solid var(--border-subtle)' }}
                         />
                         <div className="flex-1 min-w-0">
@@ -724,16 +777,16 @@ function AppContent() {
                               {contributor.username}
                             </span>
                             {contributor.isMaintainer ? (
-                              <span className="text-[10px] px-1.5 py-0.5" style={{ border: '1px solid var(--text-muted)', color: 'var(--text-muted)' }}>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ border: '1px solid var(--text-muted)', color: 'var(--text-muted)' }}>
                                 Maint
                               </span>
                             ) : (
-                              <span className="text-[10px] px-1.5 py-0.5" style={{ border: '1px solid var(--text-dim)', color: 'var(--text-dim)' }}>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ border: '1px solid var(--text-dim)', color: 'var(--text-dim)' }}>
                                 Contr
                               </span>
                             )}
                           </div>
-                          
+
                           <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                             <div className="flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                               <GitPullRequest className="w-3 h-3" />
@@ -761,8 +814,8 @@ function AppContent() {
             </div>
 
             {/* Pull Requests Section */}
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-              <div 
+            <div className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+              <div
                 className="p-3 flex items-center gap-3 cursor-pointer"
                 style={{ background: 'var(--bg-tertiary)', borderBottom: showPRs ? '1px solid var(--border-subtle)' : 'none' }}
                 onClick={togglePRs}
@@ -770,66 +823,100 @@ function AppContent() {
                 <GitPullRequest className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Pull Requests</span>
                 <div className="flex-1" />
-                <span className="text-xs px-2 py-0.5" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>{stats.totalPRs} total</span>
+                <span className="text-xs px-2 py-0.5 rounded" style={{ color: 'var(--text-dim)', border: '1px solid var(--border-subtle)' }}>{stats.totalPRs} total</span>
                 <button className="ml-2 p-1 hover:opacity-80" style={{ color: 'var(--text-muted)' }}>
                   {showPRs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
-              
+
               {showPRs && (
                 <div className="p-4">
+                  {/* Filter buttons */}
+                  <div className="flex items-center gap-1 mb-4">
+                    {(['all', 'open', 'merged', 'closed'] as const).map((filter) => {
+                      const counts = {
+                        all: stats.recentPRs.length,
+                        open: stats.recentPRs.filter(pr => pr.state === 'open').length,
+                        merged: stats.recentPRs.filter(pr => pr.state === 'merged').length,
+                        closed: stats.recentPRs.filter(pr => pr.state === 'closed').length,
+                      };
+                      const colors = {
+                        all: 'var(--text-muted)',
+                        open: 'var(--pr-open)',
+                        merged: 'var(--pr-merged)',
+                        closed: 'var(--pr-closed)',
+                      };
+                      return (
+                        <button
+                          key={filter}
+                          onClick={(e) => { e.stopPropagation(); setPrFilter(filter); }}
+                          className="text-[10px] px-2 py-1 rounded transition-all flex items-center gap-1.5"
+                          style={{
+                            background: prFilter === filter ? 'var(--bg-tertiary)' : 'transparent',
+                            border: `1px solid ${prFilter === filter ? colors[filter] : 'var(--border-subtle)'}`,
+                            color: prFilter === filter ? colors[filter] : 'var(--text-dim)',
+                          }}
+                        >
+                          <span className="capitalize">{filter}</span>
+                          <span style={{ opacity: 0.7 }}>({counts[filter]})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                   <div className="space-y-2">
-                    {stats.recentPRs.map((pr) => (
-                      <div
-                        key={pr.number}
-                        className="p-3"
-                        style={{ 
-                          background: 'var(--bg-tertiary)',
-                          border: '1px solid var(--border-subtle)',
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 pt-0.5">
-                            {pr.state === 'merged' ? (
-                              <GitMerge className="w-4 h-4" style={{ color: 'var(--pr-merged)' }} />
-                            ) : pr.state === 'open' ? (
-                              <GitPullRequest className="w-4 h-4" style={{ color: 'var(--pr-open)' }} />
-                            ) : (
-                              <GitPullRequestClosed className="w-4 h-4" style={{ color: 'var(--pr-closed)' }} />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <a
-                                href={pr.html_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-medium truncate hover:underline"
-                                style={{ color: 'var(--text)' }}
-                              >
-                                {pr.title}
-                              </a>
-                              <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-dim)' }}>
-                                #{pr.number}
-                              </span>
+                    {stats.recentPRs
+                      .filter(pr => prFilter === 'all' || pr.state === prFilter)
+                      .map((pr) => (
+                        <div
+                          key={pr.number}
+                          className="p-3 rounded-md"
+                          style={{
+                            background: 'var(--bg-tertiary)',
+                            border: '1px solid var(--border-subtle)',
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 pt-0.5">
+                              {pr.state === 'merged' ? (
+                                <GitMerge className="w-4 h-4" style={{ color: 'var(--pr-merged)' }} />
+                              ) : pr.state === 'open' ? (
+                                <GitPullRequest className="w-4 h-4" style={{ color: 'var(--pr-open)' }} />
+                              ) : (
+                                <GitPullRequestClosed className="w-4 h-4" style={{ color: 'var(--pr-closed)' }} />
+                              )}
                             </div>
-                            <div className="mt-1 flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                              <span>by{' '}
-                                <button
-                                  onClick={() => handleUserClick(pr.user.login)}
-                                  className="hover:underline"
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <a
+                                  href={pr.html_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm font-medium truncate hover:underline"
                                   style={{ color: 'var(--text)' }}
                                 >
-                                  {pr.user.login}
-                                </button>
-                              </span>
-                              <span>•</span>
-                              <span>{new Date(pr.created_at).toLocaleDateString()}</span>
+                                  {pr.title}
+                                </a>
+                                <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-dim)' }}>
+                                  #{pr.number}
+                                </span>
+                              </div>
+                              <div className="mt-1 flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                <span>by{' '}
+                                  <button
+                                    onClick={() => handleUserClick(pr.user.login)}
+                                    className="hover:underline"
+                                    style={{ color: 'var(--text)' }}
+                                  >
+                                    {pr.user.login}
+                                  </button>
+                                </span>
+                                <span>•</span>
+                                <span>{new Date(pr.created_at).toLocaleDateString()}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}
@@ -839,7 +926,7 @@ function AppContent() {
 
         {/* Empty State */}
         {!stats && !loading && !error && (
-          <div className="p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+          <div className="p-4 rounded-lg" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
             <div className="flex flex-col items-center justify-center py-16">
               <RefreshCw className="w-12 h-12 mb-4" style={{ color: 'var(--text-dim)' }} />
               <p className="text-lg font-medium mb-2" style={{ color: 'var(--text)' }}>Ready to analyze</p>
@@ -863,8 +950,8 @@ function AppContent() {
       />
 
       {/* Footer */}
-      <footer style={{ 
-        background: 'var(--bg-secondary)', 
+      <footer className="rounded-t-lg" style={{
+        background: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border)',
         marginTop: 'auto'
       }}>
@@ -875,17 +962,17 @@ function AppContent() {
               <span style={{ color: 'var(--text-dim)' }}>Not affiliated with GitHub</span>
             </div>
             <div className="flex items-center gap-4">
-              <a 
-                href="https://github.com/vee1e" 
-                target="_blank" 
+              <a
+                href="https://github.com/vee1e"
+                target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'var(--text-muted)' }}
               >
                 @vee1e
               </a>
-              <a 
-                href="https://linkedin.com/in/lakshitverma" 
-                target="_blank" 
+              <a
+                href="https://linkedin.com/in/lakshitverma"
+                target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: 'var(--text-muted)' }}
               >

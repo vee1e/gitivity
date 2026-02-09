@@ -35,7 +35,7 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
       onClick={handleBackdropClick}
     >
       <div
-        className="terminal-window w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="terminal-window w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-lg"
         style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -47,7 +47,7 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
             <img
               src={stats.avatarUrl}
               alt={stats.username}
-              className="w-8 h-8 rounded"
+              className="w-8 h-8 rounded-lg"
               style={{ border: '1px solid var(--border)' }}
             />
             <div>
@@ -56,16 +56,16 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
                   {stats.username}
                 </span>
                 {stats.isMaintainer ? (
-                  <span 
-                    className="text-[10px] px-1.5 py-0.5 flex items-center gap-1"
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 flex items-center gap-1 rounded"
                     style={{ border: '1px solid var(--text-muted)', color: 'var(--text-muted)' }}
                   >
                     <Shield className="w-3 h-3" />
                     Maint
                   </span>
                 ) : (
-                  <span 
-                    className="text-[10px] px-1.5 py-0.5 flex items-center gap-1"
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 flex items-center gap-1 rounded"
                     style={{ border: '1px solid var(--text-dim)', color: 'var(--text-dim)' }}
                   >
                     <Users className="w-3 h-3" />
@@ -100,9 +100,9 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
         >
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div 
-              className="p-3"
-              style={{ 
+            <div
+              className="p-3 rounded-lg"
+              style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border)',
                 borderLeft: '3px solid var(--primary)'
@@ -117,9 +117,9 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total PRs</p>
             </div>
 
-            <div 
-              className="p-3"
-              style={{ 
+            <div
+              className="p-3 rounded-lg"
+              style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border)',
                 borderLeft: '3px solid var(--pr-merged)'
@@ -134,9 +134,9 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Merged</p>
             </div>
 
-            <div 
-              className="p-3"
-              style={{ 
+            <div
+              className="p-3 rounded-lg"
+              style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border)',
                 borderLeft: '3px solid var(--pr-open)'
@@ -151,9 +151,9 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Open</p>
             </div>
 
-            <div 
-              className="p-3"
-              style={{ 
+            <div
+              className="p-3 rounded-lg"
+              style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border)',
                 borderLeft: '3px solid var(--pr-closed)'
@@ -183,8 +183,8 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
                 {sortedRepos.map(([repo, repoStats]) => (
                   <div
                     key={repo}
-                    className="p-3"
-                    style={{ 
+                    className="p-3 rounded-lg"
+                    style={{
                       background: 'var(--bg-tertiary)',
                       border: '1px solid var(--border-subtle)',
                     }}
@@ -200,8 +200,8 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
                         <FolderGit className="w-4 h-4" />
                         <span>{repo}</span>
                       </a>
-                      <span 
-                        className="text-[10px] px-1.5 py-0.5"
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded"
                         style={{ border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
                       >
                         {repoStats.totalPRs} PRs
@@ -304,18 +304,18 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <span
-                            className="text-[10px] px-1.5 py-0.5"
+                            className="text-[10px] px-1.5 py-0.5 rounded"
                             style={{
                               border: '1px solid',
-                              borderColor: pr.merged_at 
-                                ? 'var(--pr-merged)' 
-                                : pr.state === 'open' 
-                                  ? 'var(--pr-open)' 
+                              borderColor: pr.merged_at
+                                ? 'var(--pr-merged)'
+                                : pr.state === 'open'
+                                  ? 'var(--pr-open)'
                                   : 'var(--text-dim)',
-                              color: pr.merged_at 
-                                ? 'var(--pr-merged)' 
-                                : pr.state === 'open' 
-                                  ? 'var(--pr-open)' 
+                              color: pr.merged_at
+                                ? 'var(--pr-merged)'
+                                : pr.state === 'open'
+                                  ? 'var(--pr-open)'
                                   : 'var(--text-muted)'
                             }}
                           >
@@ -334,9 +334,9 @@ export function UserStatsModal({ stats, onClose }: UserStatsModalProps) {
                 </table>
               </div>
             ) : (
-              <div 
-                className="p-8 text-center"
-                style={{ 
+              <div
+                className="p-8 text-center rounded-lg"
+                style={{
                   background: 'var(--bg-tertiary)',
                   border: '1px solid var(--border-subtle)'
                 }}

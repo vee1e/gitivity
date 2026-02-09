@@ -91,6 +91,7 @@ html, body {
 .terminal-button-primary {
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
+  border-radius: 6px;
   color: var(--text);
   padding: 8px 16px;
   font-family: var(--font-mono);
@@ -107,6 +108,7 @@ html, body {
 .terminal-button-secondary {
   background: transparent;
   border: 1px solid var(--border);
+  border-radius: 6px;
   color: var(--text-muted);
   padding: 8px 16px;
   font-family: var(--font-mono);
