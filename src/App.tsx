@@ -36,6 +36,7 @@ import type {
 } from "./types";
 import { UserStatsModal } from "./components/UserStatsModal";
 import { TokenSettings } from "./components/TokenSettings";
+import { LoadingProgressPanel } from "./components/LoadingProgressPanel";
 import { hasGitHubToken } from "./utils/env";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
@@ -44,7 +45,7 @@ function AppContent() {
   const [stats, setStats] = useState<RepoStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("1m");
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>("6m");
   const [selectedUser, setSelectedUser] = useState<UserStats | null>(null);
   const [loadingUser, setLoadingUser] = useState(false);
   const [showPRs, setShowPRs] = useState(false);
@@ -999,65 +1000,17 @@ function AppContent() {
               border: "1px solid var(--border)",
             }}
           >
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center max-w-md w-full px-4">
-                <Loader2
-                  className="w-8 h-8 animate-spin mx-auto mb-4"
-                  style={{ color: "var(--text-muted)" }}
-                />
-                <p
-                  className="text-sm font-medium mb-3"
-                  style={{ color: "var(--text)" }}
-                >
-                  {loadingProgress}
-                </p>
-
-                {structuredProgress && (
-                  <div className="w-full">
-                    <div className="flex justify-between text-[10px] mb-1.5">
-                      <span
-                        className="uppercase"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {structuredProgress.stage}
-                      </span>
-                      <span style={{ color: "var(--text-dim)" }}>
-                        {structuredProgress.percentage}%
-                      </span>
-                    </div>
-                    <div
-                      className="w-full h-1.5 rounded-full overflow-hidden"
-                      style={{ background: "var(--bg-tertiary)" }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-all duration-300 ease-out"
-                        style={{
-                          background: "var(--primary)",
-                          width: `${structuredProgress.percentage}%`,
-                        }}
-                      />
-                    </div>
-                    {structuredProgress.total > 1 && (
-                      <div
-                        className="text-[10px] mt-1.5 text-right"
-                        style={{ color: "var(--text-dim)" }}
-                      >
-                        {structuredProgress.completed} /{" "}
-                        {structuredProgress.total} units
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!structuredProgress && (
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: "var(--text-dim)" }}
-                  >
-                    This may take a moment for large repositories
-                  </p>
-                )}
-              </div>
+            <div className="max-w-3xl mx-auto py-8 px-2">
+              <LoadingProgressPanel
+                mode={searchMode === "org" ? "org" : "repo"}
+                progress={structuredProgress}
+                fallbackMessage={
+                  loadingProgress ||
+                  (searchMode === "org"
+                    ? "Preparing organization-wide analysis..."
+                    : "Preparing repository analysis...")
+                }
+              />
             </div>
           </div>
         )}
@@ -1068,22 +1021,13 @@ function AppContent() {
             className="fixed inset-0 flex items-center justify-center z-50"
             style={{ background: "rgba(0,0,0,0.8)" }}
           >
-            <div
-              className="p-6 rounded-lg"
-              style={{
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <Loader2
-                  className="w-5 h-5 animate-spin"
-                  style={{ color: "var(--text-muted)" }}
-                />
-                <p style={{ color: "var(--text)" }}>
-                  Loading user statistics...
-                </p>
-              </div>
+            <div className="w-full max-w-2xl px-4">
+              <LoadingProgressPanel
+                mode="member"
+                progress={structuredProgress}
+                fallbackMessage={loadingProgress || "Loading user statistics..."}
+                compact
+              />
             </div>
           </div>
         )}

@@ -130,7 +130,7 @@ async function fetchMaintainers(
     if (!quiet) {
       emitLoadingProgress("Fetching collaborators...", {
         stage: "collaborators",
-        percentage: 5,
+        percentage: 18,
         completed: 0,
         total: 1,
       });
@@ -311,7 +311,7 @@ export const fetchRepoStats = async (
     // Use optimized maintainer fetching
     emitLoadingProgress("Fetching repository information...", {
       stage: "repo",
-      percentage: 5,
+      percentage: 8,
       completed: 0,
       total: 1,
     });
@@ -327,17 +327,17 @@ export const fetchRepoStats = async (
       maintainers = new Set();
     }
 
-    // Single-repo pull request fetch (repo mode)
-    emitLoadingProgress("Fetching pull requests...", {
-      stage: "repo-prs",
-      percentage: 10,
-      completed: 0,
-      total: 1,
-    });
     const pullRequests: PullRequest[] = [];
     let page = 1;
     let hasMore = true;
     const MAX_PAGES = 5;
+    // Single-repo pull request fetch (repo mode)
+    emitLoadingProgress("Fetching pull requests...", {
+      stage: "repo-prs",
+      percentage: 26,
+      completed: 0,
+      total: MAX_PAGES,
+    });
 
     try {
       while (hasMore && page <= MAX_PAGES) {
@@ -389,12 +389,16 @@ export const fetchRepoStats = async (
         }));
 
         pullRequests.push(...mappedPRs);
+        const pagesFetched = page;
         page++;
-        const pagePct = Math.min(85, 10 + Math.floor((page / MAX_PAGES) * 70));
-        emitLoadingProgress(`Fetched page ${page - 1} of pull requests...`, {
+        const pagePct = Math.min(
+          82,
+          26 + Math.floor((pagesFetched / MAX_PAGES) * 56),
+        );
+        emitLoadingProgress(`Fetched page ${pagesFetched} of pull requests...`, {
           stage: "repo-prs",
           percentage: pagePct,
-          completed: page - 1,
+          completed: pagesFetched,
           total: MAX_PAGES,
         });
       }
@@ -404,7 +408,7 @@ export const fetchRepoStats = async (
 
     emitLoadingProgress("Processing contributor data...", {
       stage: "processing",
-      percentage: 92,
+      percentage: 90,
       completed: 1,
       total: 1,
     });
@@ -439,7 +443,10 @@ export const fetchRepoStats = async (
     });
 
     const contributors = Array.from(contributorMap.values()).sort(
-      (a, b) => b.totalPRs - a.totalPRs,
+      (a, b) =>
+        b.mergedPRs - a.mergedPRs ||
+        b.totalPRs - a.totalPRs ||
+        b.openPRs - a.openPRs,
     );
 
     for (const contributor of contributors) {
@@ -449,6 +456,13 @@ export const fetchRepoStats = async (
         console.log(`❌ ${contributor.username} is NOT a maintainer`);
       }
     }
+
+    emitLoadingProgress("Repository scan completed", {
+      stage: "completed",
+      percentage: 100,
+      completed: 1,
+      total: 1,
+    });
 
     return {
       totalPRs: pullRequests.length,
@@ -474,7 +488,7 @@ export const fetchOrganizationActiveUsers = async (
 
     emitLoadingProgress(`Fetching repositories for ${normalizedOrg}...`, {
       stage: "org-repos",
-      percentage: 3,
+      percentage: 8,
       completed: 0,
       total: 1,
     });
@@ -483,6 +497,15 @@ export const fetchOrganizationActiveUsers = async (
     const reposToScan = Array.from(new Set(firstPageRepos));
     const MAX_REPOS = 50;
     const selectedRepos = reposToScan.slice(0, MAX_REPOS);
+    emitLoadingProgress(
+      `Preparing organization scan across ${selectedRepos.length} repositories...`,
+      {
+        stage: "org-repos",
+        percentage: 18,
+        completed: selectedRepos.length,
+        total: Math.max(1, selectedRepos.length),
+      },
+    );
 
     const MAX_PAGES_PER_REPO = 5;
     const pullRequests: PullRequest[] = [];
@@ -511,8 +534,8 @@ export const fetchOrganizationActiveUsers = async (
         );
         const currentUnit = repoIndex * MAX_PAGES_PER_REPO + page;
         const scanPct = Math.min(
-          95,
-          5 + Math.floor((currentUnit / totalUnits) * 85),
+          92,
+          20 + Math.floor((currentUnit / totalUnits) * 72),
         );
         emitLoadingProgress(
           `Org scan ${repoIndex + 1}/${selectedRepos.length} • ${repoName} • page ${page}`,
@@ -601,9 +624,9 @@ export const fetchOrganizationActiveUsers = async (
 
     emitLoadingProgress("Finalizing org activity results...", {
       stage: "finalizing",
-      percentage: 98,
+      percentage: 96,
       completed: selectedRepos.length,
-      total: selectedRepos.length,
+      total: Math.max(1, selectedRepos.length),
     });
 
     const users = aggregateOrganizationActiveUsers(pullRequests, maintainersMap);
@@ -611,8 +634,8 @@ export const fetchOrganizationActiveUsers = async (
     emitLoadingProgress("Org scan completed", {
       stage: "completed",
       percentage: 100,
-      completed: selectedRepos.length,
-      total: selectedRepos.length,
+      completed: selectedRepos.length > 0 ? selectedRepos.length : 1,
+      total: Math.max(1, selectedRepos.length),
     });
 
     return {
@@ -679,7 +702,7 @@ export const fetchUserStats = async (
 
     emitLoadingProgress(`Fetching user data for ${username}...`, {
       stage: "user",
-      percentage: 5,
+      percentage: 8,
       completed: 0,
       total: 1,
     });
@@ -698,7 +721,7 @@ export const fetchUserStats = async (
     // Fetch pull requests
     emitLoadingProgress(`Fetching ${username}'s pull requests...`, {
       stage: "user-prs",
-      percentage: 10,
+      percentage: 20,
       completed: 0,
       total: MAX_PAGES,
     });
@@ -755,15 +778,16 @@ export const fetchUserStats = async (
           })),
         );
 
+        const pagesFetched = page;
         page++;
         const userPagePct = Math.min(
-          85,
-          10 + Math.floor((page / MAX_PAGES) * 70),
+          82,
+          22 + Math.floor((pagesFetched / MAX_PAGES) * 60),
         );
-        emitLoadingProgress(`Fetched page ${page - 1} of pull requests...`, {
+        emitLoadingProgress(`Fetched page ${pagesFetched} of pull requests...`, {
           stage: "user-prs",
           percentage: userPagePct,
-          completed: page - 1,
+          completed: pagesFetched,
           total: MAX_PAGES,
         });
       }
@@ -774,7 +798,7 @@ export const fetchUserStats = async (
 
     emitLoadingProgress(`Processing repositories for ${username}...`, {
       stage: "user-processing",
-      percentage: 90,
+      percentage: 86,
       completed: 1,
       total: 1,
     });
@@ -828,22 +852,24 @@ export const fetchUserStats = async (
       .sort(([, a], [, b]) => b.totalPRs - a.totalPRs)
       .slice(0, 3); // Top 3 repos
 
+    const totalChecks = Math.max(1, repoEntries.length);
     emitLoadingProgress(`Checking maintainer status...`, {
       stage: "maintainer-check",
-      percentage: 95,
-      completed: 0,
-      total: repoEntries.length || 1,
+      percentage: repoEntries.length > 0 ? 90 : 97,
+      completed: repoEntries.length > 0 ? 0 : 1,
+      total: totalChecks,
     });
 
     // Use Promise.all instead of Promise.any for better performance
     if (repoEntries.length > 0) {
+      let checksCompleted = 0;
       const checkResults = await Promise.all(
         repoEntries.map(async ([repoName]) => {
           try {
             const [owner, repo] = repoName.split("/");
             if (!owner || !repo) return false;
 
-            const maintainers = await getMaintainers(octokit, owner, repo);
+            const maintainers = await getMaintainers(octokit, owner, repo, true);
             const isMaintainerForRepo = maintainers.has(username);
 
             console.log(
@@ -852,6 +878,21 @@ export const fetchUserStats = async (
             return isMaintainerForRepo;
           } catch {
             return false;
+          } finally {
+            checksCompleted += 1;
+            const checkPct = Math.min(
+              98,
+              90 + Math.floor((checksCompleted / totalChecks) * 8),
+            );
+            emitLoadingProgress(
+              `Checking maintainer status... (${checksCompleted}/${totalChecks})`,
+              {
+                stage: "maintainer-check",
+                percentage: checkPct,
+                completed: checksCompleted,
+                total: totalChecks,
+              },
+            );
           }
         }),
       );
